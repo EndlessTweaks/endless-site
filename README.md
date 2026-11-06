@@ -5,15 +5,16 @@ build step or external JavaScript libraries are required.
 
 ## Publish
 
-The site is published at <https://bonesv1.github.io/endless-site/> from the
-public, site-only repository <https://github.com/Bonesv1/endless-site>. The
+The site is published at <https://endlesstweaks.github.io/endless-site/> from
+the public, site-only repository <https://github.com/EndlessTweaks/endless-site>. The
 included GitHub Actions workflow deploys the static site after each push to
 `main`.
 
 ## Product download links
 
 The hosted download buttons point to the latest GitHub Release assets in
-`Bonesv1/endless-site`. The current consumer downloads are in release `v1.0.0`:
+`EndlessTweaks/endless-site`. The current consumer downloads are in release
+`v1.0.0`:
 
 - `EndlessTweaks-Consumer-win-x64.zip`
 - `EndlessZero-Consumer-win-x64.zip`
