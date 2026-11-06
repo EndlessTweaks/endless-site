@@ -71,6 +71,8 @@
     .access-dialog { width: min(480px, calc(100% - 32px)); padding: 0; color: var(--text); background: var(--surface); border: 1px solid var(--line); border-radius: 20px; box-shadow: 0 28px 90px rgba(0,0,0,.6); }
     .access-dialog::backdrop { background: rgba(5,4,8,.78); backdrop-filter: blur(7px); }
     .access-panel { padding: 28px; }
+    .access-brand { display:flex; align-items:center; gap:11px; margin-bottom:18px; color:#f7f3ff; font-size:12px; font-weight:850; letter-spacing:.12em; }
+    .access-brand img { width:37px; height:37px; border-radius:10px; }
     .access-panel h2 { margin: 0 0 8px; font-size: 25px; letter-spacing: -.04em; }
     .access-panel p { color: var(--muted); font-size: 13px; line-height: 1.7; margin: 0 0 19px; }
     .access-panel label { display: block; color: #d6cee2; font-size: 12px; font-weight: 700; margin: 13px 0 6px; }
@@ -287,15 +289,19 @@
 
   <dialog class="access-dialog" id="zeroAccessDialog" aria-labelledby="zeroAccessTitle">
     <form class="access-panel" id="zeroAccessForm">
-      <h2 id="zeroAccessTitle">Endless Zero Pro sign in</h2>
-      <p>Use the same username and Lifetime Pro code issued for Endless Tweaks. We verify the code with the Endless license service, then provide a short-lived download session. No separate password account is needed.</p>
+      <div class="access-brand"><img src="endless-logo-purple.png" alt=""> ENDLESS TWEAKS</div>
+      <h2 id="zeroAccessTitle">Sign in to Endless Tweaks</h2>
+      <p>Use your Endless Tweaks username and password. First time here? Create a website account with those same details. Enter your Lifetime Pro code too so we can verify access to Endless Zero.</p>
       <label for="zeroUsername">Endless Tweaks username</label>
       <input id="zeroUsername" name="username" autocomplete="username" minlength="3" maxlength="32" required>
+      <label for="zeroPassword">Password</label>
+      <input id="zeroPassword" name="password" type="password" autocomplete="current-password" minlength="8" maxlength="256" required>
       <label for="zeroCode">Lifetime Pro code</label>
       <input id="zeroCode" name="code" autocomplete="off" spellcheck="false" required>
       <p class="access-status" id="zeroAccessStatus" role="status" aria-live="polite"></p>
       <div class="access-actions">
-        <button class="button small" id="zeroAccessSubmit" type="submit">Verify &amp; download</button>
+        <button class="button small" id="zeroAccessSubmit" type="submit" value="login">Sign in</button>
+        <button class="button secondary small" id="zeroCreateAccount" type="submit" value="register">Create account</button>
         <button class="button secondary small" type="button" id="zeroAccessCancel">Cancel</button>
       </div>
     </form>
@@ -336,15 +342,20 @@
       zeroAccessForm.addEventListener('submit', async event => {
         event.preventDefault();
         zeroAccessSubmit.disabled = true;
-        zeroAccessStatus.textContent = 'Checking your Lifetime Pro code…';
+        const mode = event.submitter?.value === 'register' ? 'register' : 'login';
+        zeroAccessStatus.textContent = mode === 'register' ? 'Creating your account and checking Pro access…' : 'Signing in and checking Pro access…';
         try {
-          const sessionResponse = await fetch(`${licenseApi}/api/download/session`, {
+          const sessionResponse = await fetch(`${licenseApi}/api/account/${mode}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: document.getElementById('zeroUsername').value, code: document.getElementById('zeroCode').value })
+            body: JSON.stringify({
+              username: document.getElementById('zeroUsername').value,
+              password: document.getElementById('zeroPassword').value,
+              code: document.getElementById('zeroCode').value
+            })
           });
           const session = await sessionResponse.json();
-          if (!sessionResponse.ok) throw new Error(session.error || 'We could not verify that username and Pro code.');
+          if (!sessionResponse.ok) throw new Error(session.error || 'We could not sign you in or verify your Pro code.');
           zeroAccessToken = session.accessToken;
           zeroAccessStatus.textContent = 'Verified. Preparing your secure download…';
           const downloadResponse = await fetch(`${licenseApi}/api/download/endless-zero`, {

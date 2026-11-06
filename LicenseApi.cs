@@ -29,6 +29,14 @@ builder.Services.AddRateLimiter(options =>
             QueueLimit = 0,
             AutoReplenishment = true
         }));
+    options.AddPolicy("website-account", context =>
+        RateLimitPartition.GetFixedWindowLimiter(context.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 8,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+            AutoReplenishment = true
+        }));
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 });
 
@@ -59,23 +67,38 @@ app.MapPost("/api/license/redeem", async Task<IResult> (RedeemCodeRequest reques
     return Results.Ok(tokens.CreateDeviceSession(request.DeviceId!));
 }).RequireRateLimiting("code-redemption");
 
-app.MapPost("/api/download/session", async Task<IResult> (DownloadSessionRequest request, LicenseSettings config, LicenseStore store, TokenService tokens) =>
+app.MapPost("/api/account/register", async Task<IResult> (WebsiteAccountRequest request, LicenseSettings config, LicenseStore store, TokenService tokens) =>
 {
     if (!config.IsReady) return Results.Json(new { error = "The secure download service is not configured yet." }, statusCode: StatusCodes.Status503ServiceUnavailable);
     var username = NormalizeUsername(request.Username);
-    if (username is null || string.IsNullOrWhiteSpace(request.Code))
-        return Results.BadRequest(new { error = "Enter the username and Lifetime Pro code from your purchase." });
+    if (username is null || request.Password is not { Length: >= 8 and <= 256 } || string.IsNullOrWhiteSpace(request.Code))
+        return Results.BadRequest(new { error = "Enter a username, a password with at least 8 characters, and your Lifetime Pro code." });
 
     var normalizedCode = request.Code.Trim();
-    var authorized = normalizedCode.StartsWith("BT1.", StringComparison.Ordinal)
-        ? OwnerCodeVerifier.MatchesUsername(normalizedCode, username)
-        : config.IsReady && await store.IsDownloadCodeValidAsync(normalizedCode, username);
-    if (!authorized)
+    if (!await ProCodeMatchesAsync(normalizedCode, username, store))
         return Results.Json(new { error = "That username and Lifetime Pro code could not be verified." }, statusCode: StatusCodes.Status401Unauthorized);
+    if (!await store.CreateWebsiteAccountAsync(username, request.Password, HashWebsiteCode(normalizedCode)))
+        return Results.Conflict(new { error = "A website account already exists for that username. Choose Sign in instead." });
 
     var expiry = DateTimeOffset.UtcNow.AddMinutes(15);
     return Results.Ok(new { accessToken = tokens.CreateDownloadSession(username, expiry), expiresUtc = expiry });
-}).RequireRateLimiting("code-redemption");
+}).RequireRateLimiting("website-account");
+
+app.MapPost("/api/account/login", async Task<IResult> (WebsiteAccountRequest request, LicenseSettings config, LicenseStore store, TokenService tokens) =>
+{
+    if (!config.IsReady) return Results.Json(new { error = "The secure download service is not configured yet." }, statusCode: StatusCodes.Status503ServiceUnavailable);
+    var username = NormalizeUsername(request.Username);
+    if (username is null || string.IsNullOrWhiteSpace(request.Password) || string.IsNullOrWhiteSpace(request.Code))
+        return Results.BadRequest(new { error = "Enter your username, password, and Lifetime Pro code." });
+
+    var normalizedCode = request.Code.Trim();
+    if (!await store.VerifyWebsiteAccountAsync(username, request.Password, HashWebsiteCode(normalizedCode)) ||
+        !await ProCodeMatchesAsync(normalizedCode, username, store))
+        return Results.Json(new { error = "Sign in details or Pro access could not be verified." }, statusCode: StatusCodes.Status401Unauthorized);
+
+    var expiry = DateTimeOffset.UtcNow.AddMinutes(15);
+    return Results.Ok(new { accessToken = tokens.CreateDownloadSession(username, expiry), expiresUtc = expiry });
+}).RequireRateLimiting("website-account");
 
 app.MapGet("/api/download/endless-zero", (HttpContext context, TokenService tokens, LicenseSettings config) =>
 {
@@ -152,6 +175,19 @@ static string? NormalizeUsername(string? value)
     var username = value?.Trim();
     if (username is not { Length: >= 3 and <= 32 } || username.Any(character => !(char.IsLetterOrDigit(character) || character is '_' or '-' or '.'))) return null;
     return username;
+}
+
+static async Task<bool> ProCodeMatchesAsync(string code, string username, LicenseStore store) =>
+    code.StartsWith("BT1.", StringComparison.Ordinal)
+        ? OwnerCodeVerifier.MatchesUsername(code, username)
+        : await store.IsDownloadCodeValidAsync(code, username);
+
+static string HashWebsiteCode(string input)
+{
+    var normalized = input.StartsWith("BT1.", StringComparison.Ordinal)
+        ? input.Trim()
+        : new string(input.Where(char.IsLetterOrDigit).Select(char.ToUpperInvariant).ToArray());
+    return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(normalized)));
 }
 
 static bool AdminAuthorized(HttpContext context, string configuredSecret)
@@ -249,6 +285,7 @@ internal sealed class TokenService(LicenseSettings settings)
 internal sealed class LicenseStore(LicenseSettings settings)
 {
     private const string Alphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+    private const int WebsitePasswordIterations = 310_000;
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true, PropertyNameCaseInsensitive = true };
     private readonly SemaphoreSlim _gate = new(1, 1);
 
@@ -317,6 +354,47 @@ internal sealed class LicenseStore(LicenseSettings settings)
         finally { _gate.Release(); }
     }
 
+    public async Task<bool> CreateWebsiteAccountAsync(string username, string password, string proCodeHash)
+    {
+        var salt = RandomNumberGenerator.GetBytes(16);
+        var passwordHash = Rfc2898DeriveBytes.Pbkdf2(password, salt, WebsitePasswordIterations, HashAlgorithmName.SHA256, 32);
+        await _gate.WaitAsync();
+        try
+        {
+            var state = await ReadAsync();
+            if (state.WebsiteAccounts.Any(account => account.Username.Equals(username, StringComparison.OrdinalIgnoreCase))) return false;
+            state.WebsiteAccounts.Add(new WebsiteAccountRecord
+            {
+                Username = username,
+                Salt = Convert.ToBase64String(salt),
+                PasswordHash = Convert.ToBase64String(passwordHash),
+                PasswordIterations = WebsitePasswordIterations,
+                ProCodeHash = proCodeHash,
+                CreatedUtc = DateTime.UtcNow
+            });
+            await WriteAsync(state);
+            return true;
+        }
+        finally { _gate.Release(); }
+    }
+
+    public async Task<bool> VerifyWebsiteAccountAsync(string username, string password, string proCodeHash)
+    {
+        await _gate.WaitAsync();
+        try
+        {
+            var state = await ReadAsync();
+            var account = state.WebsiteAccounts.FirstOrDefault(existing => existing.Username.Equals(username, StringComparison.OrdinalIgnoreCase));
+            if (account is null || account.PasswordIterations is < 100_000 or > 1_000_000 || !FixedTimeHashEquals(account.ProCodeHash, proCodeHash)) return false;
+            var salt = Convert.FromBase64String(account.Salt);
+            var expected = Convert.FromBase64String(account.PasswordHash);
+            var actual = Rfc2898DeriveBytes.Pbkdf2(password, salt, account.PasswordIterations, HashAlgorithmName.SHA256, expected.Length);
+            return CryptographicOperations.FixedTimeEquals(actual, expected);
+        }
+        catch (Exception ex) when (ex is FormatException or CryptographicException or ArgumentException) { return false; }
+        finally { _gate.Release(); }
+    }
+
     public async Task<DeviceLicenseRecord?> GetActiveLicenseAsync(string deviceId)
     {
         await _gate.WaitAsync();
@@ -379,6 +457,17 @@ internal sealed class LicenseState
 {
     public List<RedeemCodeRecord> Codes { get; set; } = new();
     public List<DeviceLicenseRecord> Devices { get; set; } = new();
+    public List<WebsiteAccountRecord> WebsiteAccounts { get; set; } = new();
+}
+
+internal sealed class WebsiteAccountRecord
+{
+    public string Username { get; set; } = "";
+    public string Salt { get; set; } = "";
+    public string PasswordHash { get; set; } = "";
+    public int PasswordIterations { get; set; }
+    public string ProCodeHash { get; set; } = "";
+    public DateTime CreatedUtc { get; set; }
 }
 
 internal sealed class RedeemCodeRecord
@@ -402,7 +491,7 @@ internal sealed class DeviceLicenseRecord
 
 internal sealed record RedeemCodeRequest(string? Username, string? Code, string? DeviceId);
 internal sealed record CreateCodesRequest(int Count, string? Username);
-internal sealed record DownloadSessionRequest(string? Username, string? Code);
+internal sealed record WebsiteAccountRequest(string? Username, string? Password, string? Code);
 
 internal static class OwnerCodeVerifier
 {

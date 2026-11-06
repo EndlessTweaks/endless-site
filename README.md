@@ -14,10 +14,12 @@ included GitHub Actions workflow deploys the static site after each push to
 
 The Endless Tweaks consumer download points to the latest GitHub Release asset
 in `EndlessTweaks/endless-site`. Endless Zero sign-in calls
-`https://endless-tweaks-license-api.onrender.com` and checks the same username
-and Lifetime Pro code used by Endless Tweaks. The API streams the Zero archive
-from its private persistent disk. The ZIP must not be attached to a public
-GitHub release or copied into the public Pages repository.
+`https://endless-tweaks-license-api.onrender.com`. It has Sign in and Create
+account actions matching the desktop account screen, and checks the Lifetime
+Pro code for entitlement. Website passwords are salted PBKDF2 hashes held on
+the license service; they are separate from local desktop app accounts. The API
+streams the Zero archive from its private persistent disk. The ZIP must not be
+attached to a public GitHub release or copied into the public Pages repository.
 
 The current consumer release is `v1.1.0`:
 
@@ -48,7 +50,9 @@ $zipPath = Read-Host "Path to EndlessZero-Consumer-win-x64.zip"
 Invoke-RestMethod -Method Put -Uri "https://endless-tweaks-license-api.onrender.com/api/admin/package" -Headers @{ "X-Admin-Secret" = $adminSecret } -ContentType "application/zip" -InFile $zipPath
 ```
 
-The API verifies server-issued online codes without consuming unused codes and
+Create a website account with the username, password, and Pro code that match
+your Endless Tweaks Pro username. Later, sign in with those same details. The
+API verifies server-issued online codes without consuming unused codes and
 verifies signed offline `BT1` owner codes with the app's public verification
 key. Successful sign-in tokens expire after 15 minutes. Until the Blueprint is
 deployed and the archive uploaded, the download form reports that the secure
