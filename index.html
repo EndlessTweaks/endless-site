@@ -68,6 +68,15 @@
     .button:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 15px 38px rgba(132, 82, 205, .36); }
     .button.secondary { background: rgba(255,255,255,.04); box-shadow: none; border-color: var(--line); color: var(--text); }
     .button.small { min-height: 39px; padding-inline: 14px; font-size: 12px; }
+    .access-dialog { width: min(480px, calc(100% - 32px)); padding: 0; color: var(--text); background: var(--surface); border: 1px solid var(--line); border-radius: 20px; box-shadow: 0 28px 90px rgba(0,0,0,.6); }
+    .access-dialog::backdrop { background: rgba(5,4,8,.78); backdrop-filter: blur(7px); }
+    .access-panel { padding: 28px; }
+    .access-panel h2 { margin: 0 0 8px; font-size: 25px; letter-spacing: -.04em; }
+    .access-panel p { color: var(--muted); font-size: 13px; line-height: 1.7; margin: 0 0 19px; }
+    .access-panel label { display: block; color: #d6cee2; font-size: 12px; font-weight: 700; margin: 13px 0 6px; }
+    .access-panel input { display: block; width: 100%; min-height: 44px; padding: 0 12px; color: var(--text); background: #0e0b14; border: 1px solid var(--line); border-radius: 10px; font: inherit; }
+    .access-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+    .access-status { min-height: 20px; margin-top: 13px !important; color: var(--mint) !important; }
     .hero { padding: 90px 0 80px; position: relative; }
     .hero-grid { display: grid; grid-template-columns: 1.05fr .95fr; align-items: center; gap: 62px; }
     .eyebrow { display: inline-flex; align-items: center; gap: 9px; color: #d5b7ff; font-size: 11px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
@@ -261,7 +270,7 @@
             <p>Endless Zero is included with the Endless Tweaks Lifetime Pro plan: input tuning, live controller diagnostics, and on-demand network checks.</p>
             <div class="pro-note"><strong>Lifetime Pro exclusive</strong>Use the same username and Pro code from your purchase ticket. An existing Endless Tweaks Pro activation on this Windows account also unlocks Zero.</div>
             <ul class="feature-list"><li>Live XInput controller view</li><li>Mouse &amp; keyboard controls</li><li>Ping monitor on demand</li><li>Reversible Windows options</li></ul>
-            <div class="product-actions"><a class="button small product-download" href="../../artifacts/EndlessZero-Consumer-win-x64.zip" data-release-url="https://github.com/EndlessTweaks/endless-site/releases/latest/download/EndlessZero-Consumer-win-x64.zip" download>Download Endless Zero <span aria-hidden="true">↓</span></a><a class="button secondary small" href="https://discord.gg/4qNSaAs9qr" target="_blank" rel="noopener">Get Lifetime Pro <span aria-hidden="true">↗</span></a></div>
+            <div class="product-actions"><a class="button small" id="zeroDownloadButton" href="#zero-access">Sign in to download Endless Zero <span aria-hidden="true">↓</span></a><a class="button secondary small" href="https://discord.gg/4qNSaAs9qr" target="_blank" rel="noopener">Get Lifetime Pro <span aria-hidden="true">↗</span></a></div>
             <div class="controller-demo" id="controllerDemo" aria-hidden="true"><div class="controller-shell"></div><div class="stick left"></div><div class="stick right"></div></div>
           </article>
         </div>
@@ -276,6 +285,22 @@
     </section>
   </main>
 
+  <dialog class="access-dialog" id="zeroAccessDialog" aria-labelledby="zeroAccessTitle">
+    <form class="access-panel" id="zeroAccessForm">
+      <h2 id="zeroAccessTitle">Endless Zero Pro sign in</h2>
+      <p>Use the same username and Lifetime Pro code issued for Endless Tweaks. We verify the code with the Endless license service, then provide a short-lived download session. No separate password account is needed.</p>
+      <label for="zeroUsername">Endless Tweaks username</label>
+      <input id="zeroUsername" name="username" autocomplete="username" minlength="3" maxlength="32" required>
+      <label for="zeroCode">Lifetime Pro code</label>
+      <input id="zeroCode" name="code" autocomplete="off" spellcheck="false" required>
+      <p class="access-status" id="zeroAccessStatus" role="status" aria-live="polite"></p>
+      <div class="access-actions">
+        <button class="button small" id="zeroAccessSubmit" type="submit">Verify &amp; download</button>
+        <button class="button secondary small" type="button" id="zeroAccessCancel">Cancel</button>
+      </div>
+    </form>
+  </dialog>
+
   <footer class="footer"><div class="footer-inner wrap"><a class="footer-brand" href="#top"><img class="footer-mark" src="endless-logo-purple.png" alt=""> ENDLESS TWEAKS</a><span>Tools for your next level.</span><div class="footer-links"><a href="#offer">What we offer</a><a href="#products">Products</a><a href="#top">Back to top ↑</a></div></div></footer>
 
   <script>
@@ -286,6 +311,13 @@
       const demo = document.getElementById('controllerDemo');
       const cards = document.querySelectorAll('.tilt-card');
       const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const licenseApi = 'https://endless-tweaks-license-api.onrender.com';
+      const zeroDownloadButton = document.getElementById('zeroDownloadButton');
+      const zeroAccessDialog = document.getElementById('zeroAccessDialog');
+      const zeroAccessForm = document.getElementById('zeroAccessForm');
+      const zeroAccessStatus = document.getElementById('zeroAccessStatus');
+      const zeroAccessSubmit = document.getElementById('zeroAccessSubmit');
+      let zeroAccessToken = null;
 
       // Use the bundled local packages for file:// previews and public release assets when hosted.
       if (location.protocol !== 'file:') {
@@ -294,6 +326,54 @@
           link.removeAttribute('download');
         });
       }
+
+      zeroDownloadButton.addEventListener('click', event => {
+        event.preventDefault();
+        zeroAccessStatus.textContent = '';
+        zeroAccessDialog.showModal();
+      });
+      document.getElementById('zeroAccessCancel').addEventListener('click', () => zeroAccessDialog.close());
+      zeroAccessForm.addEventListener('submit', async event => {
+        event.preventDefault();
+        zeroAccessSubmit.disabled = true;
+        zeroAccessStatus.textContent = 'Checking your Lifetime Pro code…';
+        try {
+          const sessionResponse = await fetch(`${licenseApi}/api/download/session`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: document.getElementById('zeroUsername').value, code: document.getElementById('zeroCode').value })
+          });
+          const session = await sessionResponse.json();
+          if (!sessionResponse.ok) throw new Error(session.error || 'We could not verify that username and Pro code.');
+          zeroAccessToken = session.accessToken;
+          zeroAccessStatus.textContent = 'Verified. Preparing your secure download…';
+          const downloadResponse = await fetch(`${licenseApi}/api/download/endless-zero`, {
+            headers: { Authorization: `Bearer ${zeroAccessToken}` }
+          });
+          if (!downloadResponse.ok) {
+            const failure = await downloadResponse.json().catch(() => ({}));
+            throw new Error(failure.error || 'The secure download service is unavailable. Try again later.');
+          }
+          const file = await downloadResponse.blob();
+          const url = URL.createObjectURL(file);
+          const download = document.createElement('a');
+          download.href = url;
+          download.download = 'EndlessZero-Consumer-win-x64.zip';
+          document.body.append(download);
+          download.click();
+          download.remove();
+          window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+          zeroAccessStatus.textContent = 'Verified. Your Endless Zero download is starting.';
+          window.setTimeout(() => zeroAccessDialog.close(), 1200);
+        } catch (error) {
+          zeroAccessStatus.textContent = error instanceof TypeError
+            ? 'The secure download service is not connected yet. Please try again later.'
+            : error.message;
+        } finally {
+          zeroAccessSubmit.disabled = false;
+          zeroAccessToken = null;
+        }
+      });
 
       function pointerAt(event) {
         root.style.setProperty('--mx', `${event.clientX}px`);

@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: endless-tweaks-license-api
+    runtime: docker
+    plan: 0.5c-512mb
+    region: ohio
+    dockerfilePath: ./LicenseApi.Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ENDLESS_TOKEN_SECRET
+        generateValue: true
+      - key: ENDLESS_ADMIN_SECRET
+        generateValue: true
+      - key: ENDLESS_LICENSE_PATH
+        value: /data/licenses.json
+      - key: ENDLESS_SITE_ORIGIN
+        value: https://endlesstweaks.github.io
+      - key: ENDLESS_ZERO_PACKAGE_PATH
+        value: /data/EndlessZero-Consumer-win-x64.zip
+    disk:
+      name: endless-tweaks-license-data
+      mountPath: /data
+      sizeGB: 1
