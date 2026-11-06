@@ -5,21 +5,20 @@ build step or external JavaScript libraries are required.
 
 ## Publish
 
-Use a new, empty public GitHub repository for this folder so the unrelated desktop
-app and its development files are not published. Keep the default branch named
-`main`, push the contents of this folder to the repository root, then open
-**Settings → Pages** and set the publishing source to **GitHub Actions**. The
-included workflow deploys this static site after each push to `main`.
+The site is published at <https://bonesv1.github.io/endless-site/> from the
+public, site-only repository <https://github.com/Bonesv1/endless-site>. The
+included GitHub Actions workflow deploys the static site after each push to
+`main`.
 
 ## Product download links
 
-For a local `file://` preview, the two download buttons point to ZIP files in
-this workspace's `artifacts/` directory. When hosted, the page switches them to
-the latest GitHub Release assets in `Bonesv1/endless-site`. Publish the two
-consumer ZIPs there with these exact filenames before sharing the website:
+The hosted download buttons point to the latest GitHub Release assets in
+`Bonesv1/endless-site`. The current consumer downloads are in release `v1.0.0`:
 
 - `EndlessTweaks-Consumer-win-x64.zip`
 - `EndlessZero-Consumer-win-x64.zip`
 
-The hero panel's animated CPU and memory figures are decorative sample values,
-not readings from a visitor's computer.
+When previewed locally with `file://`, the download buttons point to ZIP files
+in this workspace's `artifacts/` directory. The hero panel's animated CPU and
+memory figures are decorative sample values, not readings from a visitor's
+computer.
