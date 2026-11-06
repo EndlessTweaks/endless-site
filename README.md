@@ -12,20 +12,21 @@ included GitHub Actions workflow deploys the static site after each push to
 
 ## Product download links
 
-The Endless Tweaks and Endless Zero consumer downloads point to public GitHub
-Release assets in `EndlessTweaks/endless-site`. Endless Zero downloads directly;
-the website does not require an account, password, or Pro code.
-
-The current consumer release is `v1.1.0`:
+The hosted download buttons point to the latest GitHub Release assets in
+`EndlessTweaks/endless-site`. The current consumer downloads are in release
+`v1.1.0`:
 
 - `EndlessTweaks-Consumer-win-x64.zip`
+- `EndlessZero-Consumer-win-x64.zip`
 
 `endless-logo-purple.png` is the shared Endless brand asset used in the header
 and footer.
 
-Endless Zero is included with the Endless Tweaks Lifetime Pro plan. Its public
-release asset can be downloaded directly from the website without signing in.
+Endless Zero is included with the Endless Tweaks Lifetime Pro plan. The app
+requires a valid Pro activation at launch and shares the activation already
+redeemed in Endless Tweaks for the same Windows user account.
 
-When previewed locally with `file://`, the Endless Tweaks button points to the
-workspace artifact. The hero panel's animated CPU and memory figures are
-decorative sample values, not readings from a visitor's computer.
+When previewed locally with `file://`, the download buttons point to ZIP files
+in this workspace's `artifacts/` directory. The hero panel's animated CPU and
+memory figures are decorative sample values, not readings from a visitor's
+computer.
