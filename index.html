@@ -51,7 +51,7 @@
     }
     .nav { height: 76px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
     .brand { display: inline-flex; align-items: center; gap: 11px; font-size: 14px; font-weight: 800; letter-spacing: .11em; }
-    .brand-mark { width: 36px; height: 36px; flex: 0 0 auto; border-radius: 11px; box-shadow: 0 0 28px rgba(173,120,255,.24); }
+    .brand-mark { width: 36px; height: 36px; flex: 0 0 auto; border-radius: 11px; object-fit: cover; box-shadow: 0 0 28px rgba(173,120,255,.24); }
     .brand span em { font-style: normal; color: var(--purple); }
     .navlinks { display: flex; align-items: center; gap: 31px; color: var(--muted); font-size: 13px; }
     .navlinks a { transition: color .2s; }
@@ -133,11 +133,14 @@
     .product-top { position:relative; z-index:1; display:flex; justify-content:space-between; align-items:center; gap:10px; }
     .product-label { color:#bba3d8; font-size:9px; font-weight:800; letter-spacing:.15em; }
     .pill { padding:7px 10px; border:1px solid rgba(124,245,208,.22); border-radius:99px; color:var(--mint); background:rgba(124,245,208,.06); font-size:9px; }
+    .pro-pill { border-color:rgba(199,160,255,.34); color:#d9bdff; background:rgba(173,120,255,.1); }
     .product-card h3 { position:relative; z-index:1; margin:25px 0 10px; font-size:29px; letter-spacing:-.05em; }
     .product-card > p { position:relative; z-index:1; max-width:460px; margin:0; color:var(--muted); font-size:13px; line-height:1.75; }
     .feature-list { position:relative; z-index:1; display:grid; grid-template-columns:1fr 1fr; gap:12px 18px; margin:23px 0 27px; padding:0; list-style:none; color:#d7d0e0; font-size:11px; }
     .feature-list li::before { content:"✓"; margin-right:8px; color:var(--mint); }
     .product-actions { position:relative; z-index:1; display:flex; gap:10px; flex-wrap:wrap; }
+    .pro-note { position:relative; z-index:1; margin:18px 0 20px; padding:12px 14px; border:1px solid rgba(199,160,255,.18); border-radius:12px; background:rgba(173,120,255,.055); color:var(--muted); font-size:11px; line-height:1.6; }
+    .pro-note strong { display:block; margin-bottom:3px; color:#decaff; font-size:10px; letter-spacing:.08em; text-transform:uppercase; }
     .product-zero { background: radial-gradient(500px circle at 100% 0%, rgba(130,85,184,.16), transparent 62%), linear-gradient(145deg, #1a1722, #111017); }
     .controller-demo { position:absolute; right:20px; bottom:14px; width:180px; height:85px; opacity:.5; pointer-events:none; }
     .controller-shell { position:absolute; inset:13px 10px 0; border:1px solid rgba(192,157,232,.48); border-radius:43px 43px 27px 27px; transform:perspective(130px) rotateX(8deg); }
@@ -194,7 +197,7 @@
 <body>
   <header class="topbar">
     <nav class="nav wrap" aria-label="Main navigation">
-      <a class="brand" href="#top" aria-label="Endless home"><svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="11" fill="#5a3296"/><circle cx="20" cy="20" r="13" fill="none" stroke="#d6b3ff" stroke-width="4" stroke-dasharray="57 25" transform="rotate(-42 20 20)"/><path d="M20 12.5 22.4 17.6 27.5 20 22.4 22.4 20 27.5 17.6 22.4 12.5 20 17.6 17.6Z" fill="#ead6ff"/></svg><span>ENDLESS<em>.</em></span></a>
+      <a class="brand" href="#top" aria-label="Endless Tweaks home"><img class="brand-mark" src="endless-logo-purple.png" alt=""><span>ENDLESS<em> TWEAKS</em></span></a>
       <div class="navlinks"><a href="#offer">What we offer</a><a href="#products">Products</a><a href="#approach">Our approach</a></div>
       <a class="button small" href="#products">Explore tools <span aria-hidden="true">↗</span></a>
     </nav>
@@ -253,11 +256,12 @@
             <div class="product-actions"><a class="button small product-download" href="../../artifacts/EndlessTweaks-Consumer-win-x64.zip" data-release-url="https://github.com/EndlessTweaks/endless-site/releases/latest/download/EndlessTweaks-Consumer-win-x64.zip" download>Download Endless Tweaks <span aria-hidden="true">↓</span></a></div>
           </article>
           <article class="product-card product-zero tilt-card">
-            <div class="product-top"><span class="product-label">INPUT &amp; LATENCY</span><span class="pill">ENDLESS ZERO</span></div>
+            <div class="product-top"><span class="product-label">INPUT &amp; LATENCY</span><span class="pill pro-pill">LIFETIME PRO</span></div>
             <h3>Know your inputs.</h3>
-            <p>A focused suite for mouse and keyboard tuning, live controller diagnostics, and on-demand network checks.</p>
+            <p>Endless Zero is included with the Endless Tweaks Lifetime Pro plan: input tuning, live controller diagnostics, and on-demand network checks.</p>
+            <div class="pro-note"><strong>Lifetime Pro exclusive</strong>Use the same username and Pro code from your purchase ticket. An existing Endless Tweaks Pro activation on this Windows account also unlocks Zero.</div>
             <ul class="feature-list"><li>Live XInput controller view</li><li>Mouse &amp; keyboard controls</li><li>Ping monitor on demand</li><li>Reversible Windows options</li></ul>
-            <div class="product-actions"><a class="button small product-download" href="../../artifacts/EndlessZero-Consumer-win-x64.zip" data-release-url="https://github.com/EndlessTweaks/endless-site/releases/latest/download/EndlessZero-Consumer-win-x64.zip" download>Download Endless Zero <span aria-hidden="true">↓</span></a><a class="button secondary small" href="#approach">Learn more</a></div>
+            <div class="product-actions"><a class="button small product-download" href="../../artifacts/EndlessZero-Consumer-win-x64.zip" data-release-url="https://github.com/EndlessTweaks/endless-site/releases/latest/download/EndlessZero-Consumer-win-x64.zip" download>Download Endless Zero <span aria-hidden="true">↓</span></a><a class="button secondary small" href="https://discord.gg/jtKbv8bceE" target="_blank" rel="noopener">Get Lifetime Pro <span aria-hidden="true">↗</span></a></div>
             <div class="controller-demo" id="controllerDemo" aria-hidden="true"><div class="controller-shell"></div><div class="stick left"></div><div class="stick right"></div></div>
           </article>
         </div>
@@ -272,7 +276,7 @@
     </section>
   </main>
 
-  <footer class="footer"><div class="footer-inner wrap"><a class="footer-brand" href="#top"><svg class="footer-mark" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="11" fill="#5a3296"/><circle cx="20" cy="20" r="13" fill="none" stroke="#d6b3ff" stroke-width="4" stroke-dasharray="57 25" transform="rotate(-42 20 20)"/><path d="M20 12.5 22.4 17.6 27.5 20 22.4 22.4 20 27.5 17.6 22.4 12.5 20 17.6 17.6Z" fill="#ead6ff"/></svg> ENDLESS</a><span>Tools for your next level.</span><div class="footer-links"><a href="#offer">What we offer</a><a href="#products">Products</a><a href="#top">Back to top ↑</a></div></div></footer>
+  <footer class="footer"><div class="footer-inner wrap"><a class="footer-brand" href="#top"><img class="footer-mark" src="endless-logo-purple.png" alt=""> ENDLESS TWEAKS</a><span>Tools for your next level.</span><div class="footer-links"><a href="#offer">What we offer</a><a href="#products">Products</a><a href="#top">Back to top ↑</a></div></div></footer>
 
   <script>
     (() => {
