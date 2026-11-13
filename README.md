@@ -1,32 +1,14 @@
-# Endless website
+# Endless Tweaks website
 
-Static site source for GitHub Pages. Open `index.html` locally to preview it; no
-build step or external JavaScript libraries are required.
+Single-product static website at https://endlesstweaks.github.io/endless-site/.
+The GitHub Pages workflow publishes this repository after pushes to main.
 
-## Publish
+## Downloads
 
-The site is published at <https://endlesstweaks.github.io/endless-site/> from
-the public, site-only repository <https://github.com/EndlessTweaks/endless-site>. The
-included GitHub Actions workflow deploys the static site after each push to
-`main`.
+Only Endless Tweaks is offered. Its direct standalone Windows x64 EXE link resolves to the latest published GitHub release asset, EndlessTweaks-Consumer-win-x64.exe. The ZIP and signed manifest assets used by the existing app updater are unaffected by the website cleanup.
 
-## Product download links
+Free and Lifetime Pro are access levels within the same application. Pro access is arranged through the existing Discord ticket and code-redemption flow.
 
-The hosted download buttons point to the latest GitHub Release assets in
-`EndlessTweaks/endless-site`. The current consumer downloads are in release
-`v1.1.0`:
+## Validation
 
-- `EndlessTweaks-Consumer-win-x64.zip`
-- `EndlessZero-Consumer-win-x64.zip`
-
-`endless-logo-purple.png` is the shared Endless brand asset used in the header
-and footer.
-
-Endless Zero is included with the Endless Tweaks Lifetime Pro plan. The app
-requires a valid Pro activation at launch and shares the activation already
-redeemed in Endless Tweaks for the same Windows user account.
-
-When previewed locally with `file://`, the download buttons point to ZIP files
-in this workspace's `artifacts/` directory. The hero panel's animated CPU and
-memory figures are decorative sample values, not readings from a visitor's
-computer.
+Open index.html in a browser. Check desktop/mobile navigation, feature and plan dialogs, the FAQ and the single product download card. This buildless site has no package dependencies. Decorative hero effects do not read a visitor's hardware.
